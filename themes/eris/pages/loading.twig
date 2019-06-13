@@ -1,0 +1,243 @@
+{% extends '@loading/base.twig' %}
+
+{% block title %}Eris | K-Load{% endblock %}
+
+{% block css %}
+	<link rel="stylesheet" href="{{assets}}/css/grid.min.css" />
+	<link rel="stylesheet" href="{{assets}}/css/grid-sm.min.css" media="all and (max-width: 575px)" />
+	<link rel="stylesheet" href="{{assets}}/css/grid-md.min.css" media="all and (min-width: 768px)" />
+	<link rel="stylesheet" href="{{assets}}/css/grid-lg.min.css" media="all and (min-width: 992px)" />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Oswald:300|Roboto:300,400">
+	<!--<link href="{{assets_theme}}/css/eris.css" rel="stylesheet">-->
+
+<style>
+body {
+	color: #fff;
+	font-family: 'Roboto';
+	font-weight: 300;
+}
+h1,h2,h3,h4,h5,h6 {
+	font-weight: 400;
+}
+.row,p {
+	margin: 0;
+}
+.row .col {
+    display: inline-block;
+    /* float: none; */
+}
+.pure-center {
+	position: relative;
+	width: 70%;
+	height: 70%;
+	min-height: 400px;
+	background-color: #363535;
+	border-radius: 15px;
+	/* border-top: 20px solid; */
+	border-color: rgba(0,0,0,0.3);
+	box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.35);
+}
+#slideshow > .backstretch {
+	border-radius: 15px;
+	-webkit-filter: blur(5px);
+}
+#trapezoid {
+	z-index: -1;
+	position: absolute;
+	top: 0%;
+	left: 50%;
+	-webkit-transform: translate(-50%, -48px);
+	width: 15%;
+	height: 0;
+	text-align: center;
+	border-bottom: 50px solid #363535;
+	border-left: 50px solid transparent;
+	border-right: 50px solid transparent;
+	-webkit-box-sizing: initial;
+	box-sizing: initial;
+}
+#player_avatar {
+	max-width: 70px;
+	margin-top: -35px;
+}
+#top-bar {
+	margin: 0px;
+	width: calc(100% + 1px);
+	height: 45px;
+	line-height: 45px;
+	background-color: #d02e2e;
+	font-family: 'Oswald';
+	font-size: 1.25rem;
+	border-radius: 15px 15px 0px 0px;
+	overflow: hidden;
+}
+#rules {
+	margin-top: 0px;
+	overflow: hidden;
+}
+#rules > .rule-block:not(:first-child) {
+	display: none;
+}
+#rules .rule {
+	position: relative;
+	opacity: 0;
+	margin-bottom: 6px;
+	padding: 8px 12px;
+	background-color: rgba(0, 0, 0, 0.1);
+	border-radius: 4px;
+}
+#rules .rule:before {
+	position: absolute;
+	content: '';
+	top: 0px;
+	left: 0px;
+	width: 3px;
+	height: 100%;
+	background-color: #d02e2e;
+	border-radius: 4px 0px 0px 4px;
+}
+#rules .separator {
+    height: 2px;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+#rules .separator:last-child {
+	display: none;
+}
+
+#staff .member {
+	display: inline-block;
+	margin: 10px 0px;
+	width: 30%;
+}
+.member .rank {
+	color: #909090;
+	font-size: 12px;
+}
+</style>
+{% endblock %}
+
+{% block body %}
+	<div class="pure-center">
+		<div id="trapezoid">
+			<img id="player_avatar" class="avatar small circle" src="{{ user.avatarfull|default(assets ~ '/img/avatar.jpg') }}">
+		</div>
+		<div id="top-bar" class="center-text">
+			<p>Welcome to {{ settings.community_name }} {{ user.personaname|default('User') }}</p>
+			<p>You are now playing on <span class="server-name">&lt;server name></span></p>
+		</div>
+		<div class="row" style="display:block;height: calc(100% - 45px);overflow: hidden;">
+			<div class="col sm-12 md-4">
+				<h1 style="margin:10px 0px;">Rules</h1>
+				<div id="rules"></div>
+			</div>
+			<div class="col sm-12 md-8">
+				<h1 style="margin:10px 0px;">Staff</h1>
+				<div id="staff"></div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block js %}
+<script>
+var top_bar_rotate = $('#top-bar > p');
+var	top_bar_rotate_counter = 0;
+top_bar_rotate.hide();
+$(top_bar_rotate[0]).show();
+
+function custom_func() {
+	var	top_bar_rotate_interv = setInterval(function() {
+		$(top_bar_rotate[top_bar_rotate_counter]).fadeOut(backgrounds.fade, function() {
+			top_bar_rotate_counter++;
+			if (top_bar_rotate_counter >= top_bar_rotate.length) {
+				top_bar_rotate_counter = 0;
+			}
+			$(top_bar_rotate[top_bar_rotate_counter]).fadeIn();
+		});
+		}, 5000);
+}
+
+function GameDetails_custom(servername, serverurl, mapname, maxplayers, steamid, gamemode, demo) {
+	showRules(gamemode);
+	showStaff(gamemode);
+}
+
+function showRules(gamemode) {
+	if (rules[gamemode] instanceof Array === false) { gamemode = 'global'; }
+	if (rules[gamemode] instanceof Array) {
+		if (rules[gamemode].length > 0) {
+			var real_cnt = 0;
+			var rule_blocks = Math.ceil(rules[gamemode].length/8);
+			for (var x = 0; x < rule_blocks; x++) {
+				var children = [];
+				for (var i = 0; i < 8; i++) {
+					var rule = rules[gamemode][real_cnt] || null;
+					real_cnt++;
+					if (!rule) { continue; }
+
+					children.push(elem('div',{ className: 'rule', innerText: rule}));
+				}
+				var rule_block = elem('div',{id: 'rule_block_'+x, className: 'rule-block'}, children);
+				document.getElementById('rules').appendChild(rule_block);
+				var rule_cnt = 0;
+				var anim_dur = 1000;
+				$('#rule_block_'+rule_cnt).children().each(function() {
+					var elem = this;
+					setTimeout(function(){
+						$(elem).animate({opacity: '1'},{duration: 500});
+					}, anim_dur);
+					anim_dur = anim_dur+500;
+				});
+			}
+
+			var rule_elems = $('.rule-block');
+			var rule_interval = setInterval(function(){
+				$('#rule_block_'+rule_cnt).fadeOut(500, function() {
+					anim_dur = 1000;
+					rule_cnt++;
+					if (rule_cnt >= rule_elems.length) {
+						rule_cnt = 0;
+					}
+					$('#rule_block_'+rule_cnt).fadeIn(300);
+
+					if ($('#rule_block_'+rule_cnt).children().css("opacity") == '0') {
+						$('#rule_block_'+rule_cnt).children().each(function() {
+							var elem = this;
+							setTimeout(function(){
+								$(elem).animate({opacity: '1'},{duration: 500});
+							}, anim_dur);
+							anim_dur = anim_dur+500;
+						});
+					}
+				});
+			}, 15000);
+
+		}
+	}
+}
+
+function showStaff(gamemode) {
+	if (staff[gamemode] instanceof Array === false) { gamemode = 'global'; 	}
+	if (staff[gamemode] instanceof Array) {
+		if (staff[gamemode].length > 0) {
+			for (var i = 0; i < staff[gamemode].length; i++) {
+				var steamid = staff[gamemode][i].steamid || null;
+				if (!steamid) { continue; }
+				var rank = staff[gamemode][i].rank || 'Staff';
+
+				document.getElementById('staff').appendChild(
+					elem('div',{className: 'member center-text'}, [
+						elem('img', {className: 'avatar small circle shadow', src: site.path+'/api/player/'+steamid+'/avatarmedium/?raw'}),
+						elem('p', {id: steamid+'_name', className: 'name', innerText: '...'}),
+						elem('p', {id: steamid+'_avatar', className: 'rank', innerText: rank})
+					])
+				);
+			}
+			var staff_elems = document.getElementById('staff').children;
+			var staff_cnt = 0;
+			getStaff();
+		}
+	}
+}
+</script>
+{% endblock %}
